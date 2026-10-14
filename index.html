@@ -466,13 +466,16 @@
                     const searchName = normalizeName(keyword);
 
                     // 핵심: 역 카테고리이면서 이름이 정확히 일치하는 결과만 남김
-                    const stationResults = data.filter(function (place) {
-                        return (
-                            place.category_group_code === "SW8" &&
-                            normalizeName(place.place_name) === searchName
-                        );
-                    });
+                  const stationResults = data.filter(function (place) {
+    // 장소 이름에서 공백 제거
+    const placeName = normalizeName(place.place_name);
 
+    // 검색어와 역 이름이 정확히 같은 지하철역만 선택
+    return (
+        place.category_group_code === "SW8" &&
+        placeName === searchName
+    );
+});
                     // 필터링된 결과만 한 번 표시
                     if (stationResults.length === 0) {
                         resultList.replaceChildren();
