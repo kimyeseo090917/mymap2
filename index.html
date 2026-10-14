@@ -24,6 +24,7 @@
             height: 100vh;
         }
 
+        /* 왼쪽 검색 영역 */
         .sidebar {
             width: 360px;
             min-width: 300px;
@@ -50,6 +51,7 @@
             line-height: 1.6;
         }
 
+        /* 검색창과 검색 버튼 */
         .search-area {
             display: flex;
             gap: 8px;
@@ -74,16 +76,11 @@
             cursor: pointer;
         }
 
-        #showStationsButton {
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            background: #e6f2ff;
-            color: #174c83;
-            font-weight: bold;
-            cursor: pointer;
+        #searchButton:hover {
+            background: #f3d900;
         }
 
+        /* 검색 상태 메시지 */
         #message {
             font-size: 13px;
             color: #555555;
@@ -92,25 +89,24 @@
             margin: 0;
         }
 
-        #resultList,
-        #stationList {
+        /* 검색 결과 목록 */
+        #resultList {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
-        .result-item,
-        .station-item {
+        .result-item {
             padding: 12px;
             border: 1px solid #eeeeee;
             border-radius: 8px;
             background: white;
             cursor: pointer;
             text-align: left;
+            width: 100%;
         }
 
-        .result-item:hover,
-        .station-item:hover {
+        .result-item:hover {
             background: #e6f2ff;
             border-color: #9bcaff;
         }
@@ -128,10 +124,7 @@
             color: #666666;
         }
 
-        .station-item {
-            font-size: 14px;
-        }
-
+        /* 오른쪽 지도 */
         #map {
             flex: 1;
             height: 100%;
@@ -139,6 +132,7 @@
             background: #eeeeee;
         }
 
+        /* 작은 화면에서는 위아래로 배치 */
         @media (max-width: 650px) {
             body {
                 overflow: auto;
@@ -171,12 +165,14 @@
 
 <body>
     <div class="container">
+
+        <!-- 왼쪽 검색 영역 -->
         <aside class="sidebar">
             <h1>전국 지하철역 검색</h1>
 
             <p class="description">
                 지하철역 이름을 입력하세요.
-                검색어와 이름이 일치하는 역만 표시합니다.
+                검색어가 포함된 지하철역만 표시합니다.
             </p>
 
             <div class="search-area">
@@ -197,164 +193,46 @@
             </p>
 
             <div id="resultList"></div>
-
-            <button id="showStationsButton" type="button">
-                예시 역 목록 표시하기
-            </button>
-
-            <p class="description">
-                아래 예시 역 목록은 일부 역만 포함하며,
-                전국의 모든 역을 나타내지는 않습니다.
-            </p>
-
-            <div id="stationList"></div>
         </aside>
 
+        <!-- 오른쪽 지도 -->
         <div id="map" aria-label="카카오맵 지도"></div>
     </div>
 
-    <!-- 카카오맵 JavaScript SDK -->
+    <!-- 카카오맵 API -->
     <script
         src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=27abdc4fa3410f4761c896b62291f606&libraries=services&autoload=false"
         onerror="document.getElementById('message').textContent='지도를 불러오지 못했습니다. API 키와 도메인 설정을 확인하세요.'">
     </script>
 
     <script>
-        // 지도와 검색 기능에 사용할 변수
+        // 지도와 검색 기능에 필요한 변수
         let map;
         let placesService;
         let markers = [];
         let infoWindow;
-
-        // 예시 역 목록의 마커를 저장하는 변수
-        let subwayMarkers = [];
-        let stationsVisible = false;
+        let searchNumber = 0;
 
         // HTML 요소 가져오기
         const keywordInput = document.getElementById("keyword");
         const searchButton = document.getElementById("searchButton");
         const resultList = document.getElementById("resultList");
-        const stationList = document.getElementById("stationList");
         const message = document.getElementById("message");
-        const showStationsButton =
-            document.getElementById("showStationsButton");
 
-        // 예시 지하철역 데이터
-        // 전국 전체 역 데이터가 아닌 일부 예시입니다.
-        const subwayStations = [
-            {
-                name: "서울역",
-                line: "1호선·4호선",
-                lat: 37.5547,
-                lng: 126.9707
-            },
-            {
-                name: "시청역",
-                line: "1호선·2호선",
-                lat: 37.5636,
-                lng: 126.9751
-            },
-            {
-                name: "종각역",
-                line: "1호선",
-                lat: 37.5702,
-                lng: 126.9831
-            },
-            {
-                name: "종로3가역",
-                line: "1호선·3호선·5호선",
-                lat: 37.5710,
-                lng: 126.9918
-            },
-            {
-                name: "동대문역",
-                line: "1호선·4호선",
-                lat: 37.5714,
-                lng: 127.0097
-            },
-            {
-                name: "명동역",
-                line: "4호선",
-                lat: 37.5609,
-                lng: 126.9860
-            },
-            {
-                name: "충무로역",
-                line: "3호선·4호선",
-                lat: 37.5612,
-                lng: 126.9942
-            },
-            {
-                name: "을지로입구역",
-                line: "2호선",
-                lat: 37.5660,
-                lng: 126.9826
-            },
-            {
-                name: "강남역",
-                line: "2호선·신분당선",
-                lat: 37.4979,
-                lng: 127.0276
-            },
-            {
-                name: "홍대입구역",
-                line: "2호선·경의중앙선·공항철도",
-                lat: 37.5572,
-                lng: 126.9254
-            },
-            {
-                name: "신촌역",
-                line: "2호선",
-                lat: 37.5551,
-                lng: 126.9368
-            },
-            {
-                name: "잠실역",
-                line: "2호선·8호선",
-                lat: 37.5133,
-                lng: 127.1001
-            },
-            {
-                name: "건대입구역",
-                line: "2호선·7호선",
-                lat: 37.5404,
-                lng: 127.0692
-            },
-            {
-                name: "부산역",
-                line: "부산 1호선",
-                lat: 35.1152,
-                lng: 129.0415
-            },
-            {
-                name: "서면역",
-                line: "부산 1호선·2호선",
-                lat: 35.1577,
-                lng: 129.0593
-            },
-            {
-                name: "대전역",
-                line: "대전 1호선",
-                lat: 36.3325,
-                lng: 127.4348
-            }
-        ];
-
-        // 페이지가 준비되면 카카오맵 실행
+        // 카카오맵 API가 준비되면 지도 실행
         window.addEventListener("load", function () {
             if (!window.kakao || !window.kakao.maps) {
                 message.textContent =
-                    "카카오맵을 불러오지 못했습니다. API 키와 도메인 설정을 확인하세요.";
+                    "지도를 불러오지 못했습니다. API 키와 도메인 설정을 확인하세요.";
                 return;
             }
 
-            // SDK 준비가 완료된 뒤 지도 초기화
             kakao.maps.load(function () {
                 initializeMap();
             });
         });
 
-        // 지도와 검색 서비스 초기화
+        // 지도 초기화
         function initializeMap() {
             const defaultPosition =
                 new kakao.maps.LatLng(37.5665, 126.9780);
@@ -367,6 +245,7 @@
                 }
             );
 
+            // 카카오 장소 검색 서비스
             placesService = new kakao.maps.services.Places();
 
             infoWindow = new kakao.maps.InfoWindow({
@@ -374,67 +253,46 @@
             });
 
             message.textContent =
-                "지도가 준비되었습니다. 역 이름을 검색하세요.";
+                "역 이름을 입력하고 검색하세요.";
 
-            // 검색 버튼과 Enter 키 연결
+            // 검색 버튼 클릭
             searchButton.addEventListener("click", searchPlaces);
 
+            // Enter 키로도 검색
             keywordInput.addEventListener("keydown", function (event) {
                 if (event.key === "Enter") {
                     searchPlaces();
                 }
             });
-
-            // 현재 위치 확인
-            getCurrentLocation();
         }
 
-        // 현재 위치를 지도에 표시
-        function getCurrentLocation() {
-            if (!navigator.geolocation) {
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                function (position) {
-                    const currentPosition = new kakao.maps.LatLng(
-                        position.coords.latitude,
-                        position.coords.longitude
-                    );
-
-                    map.setCenter(currentPosition);
-
-                    const currentMarker = new kakao.maps.Marker({
-                        position: currentPosition,
-                        map: map,
-                        title: "현재 위치"
-                    });
-
-                    markers.push(currentMarker);
-                },
-                function () {
-                    // 위치 권한이 없어도 역 검색은 계속 사용할 수 있습니다.
-                    console.log("현재 위치를 가져오지 못했습니다.");
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 60000
-                }
-            );
-        }
-
-        // 검색어에서 공백을 제거
+        // 역 이름의 공백을 제거해 비교하기 쉽게 만듦
         function normalizeName(name) {
             return String(name).replace(/\s/g, "");
         }
 
-        // 입력한 역 이름 검색
+        // 검색 결과와 마커 초기화
+        function clearSearchResults() {
+            resultList.replaceChildren();
+
+            markers.forEach(function (marker) {
+                marker.setMap(null);
+            });
+
+            markers = [];
+
+            if (infoWindow) {
+                infoWindow.close();
+            }
+        }
+
+        // 입력한 이름이 포함된 지하철역 검색
         function searchPlaces() {
             const keyword = keywordInput.value.trim();
 
             if (keyword === "") {
-                message.textContent = "검색할 역 이름을 입력하세요.";
+                message.textContent =
+                    "검색할 지하철역 이름을 입력하세요.";
                 keywordInput.focus();
                 return;
             }
@@ -445,47 +303,54 @@
                 return;
             }
 
-            // 이전 검색 결과와 마커 삭제
-            resultList.replaceChildren();
-            removeMarkers();
+            // 검색할 때마다 이전 검색 결과를 모두 제거
+            clearSearchResults();
 
-            message.textContent = "지하철역을 검색하고 있습니다.";
+            // 연속 검색 시 이전 검색 결과가 나중에 도착하는 문제 방지
+            const thisSearchNumber = ++searchNumber;
 
-            // 검색어를 포함한 장소를 검색하되,
-            // 결과를 받은 뒤 역 카테고리와 이름을 다시 확인합니다.
+            const searchName = normalizeName(keyword);
+
+            message.textContent =
+                "'" + keyword + "' 지하철역을 검색하고 있습니다.";
+
+            // 카카오맵에서 지하철역 카테고리로 검색
             placesService.keywordSearch(
                 keyword,
                 function (data, status) {
+                    // 더 최근 검색이 시작되었다면 이전 결과는 무시
+                    if (thisSearchNumber !== searchNumber) {
+                        return;
+                    }
+
+                    // 검색 결과가 없으면 빈 목록 유지
                     if (status !== kakao.maps.services.Status.OK) {
-                        resultList.replaceChildren();
+                        clearSearchResults();
                         message.textContent =
-                            "일치하는 지하철역을 찾지 못했습니다. 역 이름을 확인하세요.";
+                            "일치하는 지하철역이 없습니다.";
                         return;
                     }
 
-                    const searchName = normalizeName(keyword);
+                    // 지하철역 카테고리이면서 이름에 검색어가 포함된 결과만 선택
+                    const stationResults = data.filter(function (place) {
+                        const placeName =
+                            normalizeName(place.place_name);
 
-                    // 핵심: 역 카테고리이면서 이름이 정확히 일치하는 결과만 남김
-                  const stationResults = data.filter(function (place) {
-    // 장소 이름에서 공백 제거
-  
-const stationResults = data.filter(function (place) {
-    const placeName = normalizeName(place.place_name);
+                        return (
+                            place.category_group_code === "SW8" &&
+                            placeName.includes(searchName)
+                        );
+                    });
 
-    return (
-        place.category_group_code === "SW8" &&
-        placeName.includes(searchName)
-    );
-});
-
-                    // 필터링된 결과만 한 번 표시
+                    // 조건에 맞는 역이 없으면 다른 장소를 대신 표시하지 않음
                     if (stationResults.length === 0) {
-                        resultList.replaceChildren();
+                        clearSearchResults();
                         message.textContent =
-                            "이름이 정확히 일치하는 지하철역이 없습니다.";
+                            "검색어가 포함된 지하철역을 찾지 못했습니다.";
                         return;
                     }
 
+                    // 필터링한 지하철역만 표시
                     displayResults(stationResults);
                 },
                 {
@@ -494,20 +359,22 @@ const stationResults = data.filter(function (place) {
             );
         }
 
-        // 검색된 역을 목록과 지도에 표시
+        // 검색된 역만 목록과 지도에 표시
         function displayResults(places) {
             resultList.replaceChildren();
+
             message.textContent =
-                "일치하는 지하철역 " + places.length + "개를 찾았습니다.";
+                "검색된 지하철역: " + places.length + "개";
 
             const bounds = new kakao.maps.LatLngBounds();
 
-            places.forEach(function (place, index) {
+            places.forEach(function (place) {
                 const position = new kakao.maps.LatLng(
                     place.y,
                     place.x
                 );
 
+                // 해당 역의 지도 마커 생성
                 const marker = new kakao.maps.Marker({
                     map: map,
                     position: position,
@@ -517,6 +384,7 @@ const stationResults = data.filter(function (place) {
                 markers.push(marker);
                 bounds.extend(position);
 
+                // 검색 결과 목록 항목 생성
                 const resultItem = document.createElement("button");
                 resultItem.type = "button";
                 resultItem.className = "result-item";
@@ -536,11 +404,12 @@ const stationResults = data.filter(function (place) {
                 resultItem.appendChild(placeAddress);
                 resultList.appendChild(resultItem);
 
-                // 목록이나 마커를 누르면 해당 역으로 이동
+                // 목록을 누르면 선택한 역으로 이동
                 resultItem.addEventListener("click", function () {
                     selectPlace(place, marker);
                 });
 
+                // 지도 마커를 누르면 역 이름 표시
                 kakao.maps.event.addListener(
                     marker,
                     "click",
@@ -550,7 +419,15 @@ const stationResults = data.filter(function (place) {
                 );
             });
 
-            map.setBounds(bounds);
+            // 검색된 역의 위치에 맞게 지도 이동
+            if (places.length === 1) {
+                map.setLevel(5);
+                map.setCenter(
+                    new kakao.maps.LatLng(places[0].y, places[0].x)
+                );
+            } else {
+                map.setBounds(bounds);
+            }
         }
 
         // 선택한 역의 위치와 이름 표시
@@ -563,130 +440,12 @@ const stationResults = data.filter(function (place) {
             map.setLevel(5);
             map.setCenter(position);
 
-            infoWindow.setContent(
-                '<div style="padding:8px;font-size:13px;">' +
-                escapeHTML(place.place_name) +
-                "</div>"
-            );
+            const content = document.createElement("div");
+            content.style.padding = "8px";
+            content.style.fontSize = "13px";
+            content.textContent = place.place_name;
 
-            infoWindow.open(map, marker);
-        }
-
-        // HTML에 표시할 문자열의 특수문자 처리
-        function escapeHTML(value) {
-            return String(value).replace(/[&<>"']/g, function (character) {
-                const entities = {
-                    "&": "&amp;",
-                    "<": "&lt;",
-                    ">": "&gt;",
-                    '"': "&quot;",
-                    "'": "&#39;"
-                };
-
-                return entities[character];
-            });
-        }
-
-        // 검색 결과 마커 삭제
-        function removeMarkers() {
-            markers.forEach(function (marker) {
-                marker.setMap(null);
-            });
-
-            markers = [];
-
-            if (infoWindow) {
-                infoWindow.close();
-            }
-        }
-
-        // 예시 역 목록 표시 또는 숨기기
-        showStationsButton.addEventListener("click", function () {
-            if (!map) {
-                message.textContent = "지도가 아직 준비되지 않았습니다.";
-                return;
-            }
-
-            if (stationsVisible) {
-                subwayMarkers.forEach(function (marker) {
-                    marker.setMap(null);
-                });
-
-                subwayMarkers = [];
-                stationList.replaceChildren();
-                stationsVisible = false;
-
-                this.textContent = "예시 역 목록 표시하기";
-                message.textContent = "예시 역 목록을 숨겼습니다.";
-                return;
-            }
-
-            displaySubwayStations();
-
-            stationsVisible = true;
-            this.textContent = "예시 역 목록 숨기기";
-            message.textContent =
-                "등록된 예시 역 " + subwayStations.length + "개를 표시했습니다.";
-        });
-
-        // 예시 역을 지도와 목록에 표시
-        function displaySubwayStations() {
-            stationList.replaceChildren();
-            subwayMarkers = [];
-
-            subwayStations.forEach(function (station) {
-                const position = new kakao.maps.LatLng(
-                    station.lat,
-                    station.lng
-                );
-
-                const marker = new kakao.maps.Marker({
-                    map: map,
-                    position: position,
-                    title: station.name
-                });
-
-                subwayMarkers.push(marker);
-
-                const stationItem = document.createElement("button");
-                stationItem.type = "button";
-                stationItem.className = "station-item";
-                stationItem.textContent =
-                    station.name + " · " + station.line;
-
-                stationList.appendChild(stationItem);
-
-                stationItem.addEventListener("click", function () {
-                    moveToStation(station, marker);
-                });
-
-                kakao.maps.event.addListener(
-                    marker,
-                    "click",
-                    function () {
-                        moveToStation(station, marker);
-                    }
-                );
-            });
-        }
-
-        // 예시 역을 선택했을 때 지도 이동 및 노선 표시
-        function moveToStation(station, marker) {
-            const position = new kakao.maps.LatLng(
-                station.lat,
-                station.lng
-            );
-
-            map.setLevel(5);
-            map.setCenter(position);
-
-            infoWindow.setContent(
-                '<div style="padding:10px;font-size:13px;line-height:1.6;">' +
-                "<strong>" + escapeHTML(station.name) + "</strong><br>" +
-                escapeHTML(station.line) +
-                "</div>"
-            );
-
+            infoWindow.setContent(content);
             infoWindow.open(map, marker);
         }
     </script>
