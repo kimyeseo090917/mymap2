@@ -373,9 +373,12 @@
                 function (data, status) {
                  if (status === kakao.maps.services.Status.OK) {
     // 지하철역 카테고리에 해당하는 결과만 남기기
-    const stationResults = data.filter(function (place) {
-        return place.category_group_code === "SW8";
-    });
+  const stationResults = data.filter(function (place) {
+    return (
+        place.category_group_code === "SW8" &&
+        place.place_name.includes(keyword)
+    );
+});
 
     // 필터링한 결과만 화면에 표시
     if (stationResults.length > 0) {
