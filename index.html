@@ -332,15 +332,28 @@
                     }
 
                     // 지하철역 카테고리이면서 이름에 검색어가 포함된 결과만 선택
-                    const stationResults = data.filter(function (place) {
-                        const placeName =
-                            normalizeName(place.place_name);
+                   const stationResults = data.filter(function (place) {
+    const placeName = normalizeName(place.place_name);
 
-                        return (
-                            place.category_group_code === "SW8" &&
-                            placeName.includes(searchName)
-                        );
-                    });
+    // 검색어가 역 이름에 포함되어 있는지 확인
+    const includesKeyword = placeName.includes(searchName);
+
+    // 지하철역 카테고리인지 확인
+    const isSubwayStation =
+        place.category_group_code === "SW8";
+
+    // 건물이나 아파트 이름은 제외
+    const isBuilding =
+        placeName.includes("빌딩") ||
+        placeName.includes("아파트") ||
+        placeName.includes("오피스텔");
+
+    return (
+        isSubwayStation &&
+        includesKeyword &&
+        !isBuilding
+    );
+});
 
                     // 조건에 맞는 역이 없으면 다른 장소를 대신 표시하지 않음
                     if (stationResults.length === 0) {
