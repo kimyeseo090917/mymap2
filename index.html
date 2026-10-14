@@ -374,11 +374,22 @@
                  if (status === kakao.maps.services.Status.OK) {
     // 지하철역 카테고리에 해당하는 결과만 남기기
   const stationResults = data.filter(function (place) {
+    const stationName = place.place_name.replace(/\s/g, "");
+    const searchName = keyword.replace(/\s/g, "");
+
     return (
         place.category_group_code === "SW8" &&
-        place.place_name.includes(keyword)
+        stationName === searchName
     );
 });
+
+if (stationResults.length > 0) {
+    displayResults(stationResults);
+} else {
+    resultList.replaceChildren();
+    removeMarkers();
+    message.textContent = "일치하는 지하철역이 없습니다.";
+}
 
     // 필터링한 결과만 화면에 표시
     if (stationResults.length > 0) {
