@@ -366,27 +366,36 @@
             removeMarkers();
 
             // 카카오 장소 검색 API 실행
-            placesService.keywordSearch(keyword, function (data, status) {
-                if (status === kakao.maps.services.Status.OK) {
-                    // 검색 성공 시 결과 표시
-                    displayResults(data);
-                } else if (
-                    status === kakao.maps.services.Status.ZERO_RESULT
-                ) {
-                    message.textContent =
-                        "검색 결과가 없습니다. 다른 검색어를 입력해 보세요.";
-                } else {
-                    message.textContent =
-                        "검색 중 오류가 발생했습니다. 카카오 앱 키, Web 도메인, API 설정을 확인하세요.";
+     
+            // 카카오 장소 검색 API 실행
+            placesService.keywordSearch(
+                keyword,
+                function (data, status) {
+                    if (status === kakao.maps.services.Status.OK) {
+                        // 검색 성공 시 결과 표시
+                        displayResults(data);
+                    } else if (
+                        status === kakao.maps.services.Status.ZERO_RESULT
+                    ) {
+                        message.textContent =
+                            "검색 결과가 없습니다. 다른 검색어를 입력해 보세요.";
+                    } else {
+                        message.textContent =
+                            "검색 중 오류가 발생했습니다. 카카오 앱 키, Web 도메인, API 설정을 확인하세요.";
 
-                    console.error(
-                        "장소 검색 오류:",
-                        status,
-                        "검색어:",
-                        keyword
-                    );
+                        console.error(
+                            "장소 검색 오류:",
+                            status,
+                            "검색어:",
+                            keyword
+                        );
+                    }
+                },
+                {
+                    category_group_code: "SW8" // 지하철역 카테고리로 검색
                 }
-            });
+            );
+
         }
 
         // 검색 결과를 목록과 지도에 표시
