@@ -371,10 +371,22 @@
             placesService.keywordSearch(
                 keyword,
                 function (data, status) {
-                    if (status === kakao.maps.services.Status.OK) {
-                        // 검색 성공 시 결과 표시
-                        displayResults(data);
-                    } else if (
+                 if (status === kakao.maps.services.Status.OK) {
+    // 지하철역 카테고리에 해당하는 결과만 남기기
+    const stationResults = data.filter(function (place) {
+        return place.category_group_code === "SW8";
+    });
+
+    // 필터링한 결과만 화면에 표시
+    if (stationResults.length > 0) {
+        displayResults(stationResults);
+    } else {
+        resultList.replaceChildren();
+        removeMarkers();
+        message.textContent =
+            "등록된 지하철역 검색 결과가 없습니다.";
+    }
+}else if (
                         status === kakao.maps.services.Status.ZERO_RESULT
                     ) {
                         message.textContent =
